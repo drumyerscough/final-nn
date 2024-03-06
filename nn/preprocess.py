@@ -41,4 +41,6 @@ def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
                 G -> [0, 0, 0, 1]
             Then, AGA -> [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0].
     """
-    pass
+    lbl_map = {'A': 0, 'T': 1, 'C': 2, 'G': 3}
+    seq_idxs = list(map(lambda x: lbl_map[x], seq_arr))
+    return np.eye(len(lbl_map))[seq_idxs].flatten(order='C')
