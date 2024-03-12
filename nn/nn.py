@@ -106,7 +106,10 @@ class NeuralNetwork:
             Z_curr: ArrayLike
                 Current layer linear transformed matrix.
         """
-        pass
+        activations = {'relu': self._relu, 'sigmoid': self._sigmoid}
+        f = activations[activation]
+        A_curr = np.sum(W_curr.T@A_prev + b_curr, axis=1)
+        return A_curr, f(A_curr)
 
     def forward(self, X: ArrayLike) -> Tuple[ArrayLike, Dict[str, ArrayLike]]:
         """
@@ -122,7 +125,16 @@ class NeuralNetwork:
             cache: Dict[str, ArrayLike]:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
-        pass
+        cache = {0: (None, X)}
+
+        for idx, layer in enumerate(self.arch):
+            layer_idx = idx + 1
+            cache[layer_idx] = self._single_forward(self._param_dict['W' + str(layer_idx)], 
+                                                    self._param_dict['b' + str(layer_idx)], 
+                                                    cache[idx][1], 
+                                                    layer['activation'])
+
+        return cache[layer_idx][1], cache
 
     def _single_backprop(
         self,
@@ -245,7 +257,7 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        pass
+        return 1/(1 + np.exp(Z))
 
     def _sigmoid_backprop(self, dA: ArrayLike, Z: ArrayLike):
         """
@@ -275,7 +287,7 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        pass
+        return np.maximum(Z, 0)
 
     def _relu_backprop(self, dA: ArrayLike, Z: ArrayLike) -> ArrayLike:
         """
