@@ -21,10 +21,31 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
             List of labels for the sampled sequences
     """
     lbl_map = {'A': 0, 'T': 1, 'C': 2, 'G': 3}
-
+    
     # assume number of sequences to inc
+    num_seqs = max(labels.count(True), labels.count(False))
 
-    for 
+    pos_seqs = []
+    neg_seqs = []
+    for label, seq in zip(labels, seqs):
+        if label:
+            pos_seqs.append(seq)
+        elif not label:
+            neg_seqs.append(seq)
+    
+    num_pos = len(pos_seqs)
+    num_neg = len(neg_seqs)
+    sampled_seqs_dict = {True: [], False: []}
+    for idx in range(max(num_pos, num_neg)):
+        rand_idx = np.random.randint(num_pos)
+        rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
+        mutated_seq = pos_seqs[rand_idx].copy()
+        mutated_seq[rand_resi_to_mutate] = lbl_map[np.random.randint(4)]
+        sampled_seqs_dict[True].append(mutated_seq)
+
+        rand_idx = np.random.randint(num_neg)
+        sampled_seqs_dict[False].append(neg_seqs[rand_idx])
+
 
 def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
     """
