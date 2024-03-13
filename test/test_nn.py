@@ -1,4 +1,5 @@
 # TODO: import dependencies and write unit tests below
+import numpy as np
 
 def test_single_forward():
     pass
