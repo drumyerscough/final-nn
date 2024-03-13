@@ -30,7 +30,7 @@ class NeuralNetwork:
 
     def __init__(
         self,
-        nn_arch: List[Dict[str, Union(int, str)]],
+        nn_arch: List[Dict[str, Union[int, str]]],
         lr: float,
         seed: int,
         batch_size: int,
@@ -217,6 +217,8 @@ class NeuralNetwork:
             grad_dict[layer_idx]['dW'] = dW_curr
             grad_dict[layer_idx]['db'] = db_curr
         
+        self._update_params(grad_dict)
+
         return grad_dict
 
     def _update_params(self, grad_dict: Dict[str, ArrayLike]):
@@ -228,7 +230,11 @@ class NeuralNetwork:
             grad_dict: Dict[str, ArrayLike]
                 Dictionary containing the gradient information from most recent round of backprop.
         """
-        pass
+        alpha = self._lr
+        for layer_idx, grad in grad_dict.items():
+            self._param_dict['W' + str(layer_idx)] = self._param_dict['W' + str(layer_idx)] - alpha*grad['dW']
+            self._param_dict['b' + str(layer_idx)] = self._param_dict['b' + str(layer_idx)] - alpha*grad['db']
+
 
     def fit(
         self,
@@ -257,7 +263,20 @@ class NeuralNetwork:
             per_epoch_loss_val: List[float]
                 List of per epoch loss for validation set.
         """
-        pass
+        per_epoch_loss_train = []
+        per_epoch_loss_val = []
+
+        losses = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
+        loss = losses[self._loss_func]
+
+        for epoch in range(self._epochs):
+            output, cache = self.forward(X_train)
+            grad_dict = self.backprop(y_train, output, cache)
+
+            per_epoch_loss_train.append(loss(output, y_train))
+            per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
+
+        return per_epoch_loss_train, per_epoch_loss_val
 
     def predict(self, X: ArrayLike) -> ArrayLike:
         """
@@ -271,7 +290,8 @@ class NeuralNetwork:
             y_hat: ArrayLike
                 Prediction from the model.
         """
-        pass
+        output, _ = self.forward(X)
+        return output
 
     def _sigmoid(self, Z: ArrayLike) -> ArrayLike:
         """
