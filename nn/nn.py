@@ -232,6 +232,7 @@ class NeuralNetwork:
         """
         alpha = self._lr
         for layer_idx, grad in grad_dict.items():
+            print('might be forgetting 1/m terms')
             self._param_dict['W' + str(layer_idx)] = self._param_dict['W' + str(layer_idx)] - alpha*grad['dW']
             self._param_dict['b' + str(layer_idx)] = self._param_dict['b' + str(layer_idx)] - alpha*grad['db']
 

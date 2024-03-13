@@ -23,8 +23,6 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     lbl_map = {'A': 0, 'T': 1, 'C': 2, 'G': 3}
     
     # assume number of sequences to inc
-    num_seqs = max(labels.count(True), labels.count(False))
-
     pos_seqs = []
     neg_seqs = []
     for label, seq in zip(labels, seqs):
@@ -35,16 +33,24 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     
     num_pos = len(pos_seqs)
     num_neg = len(neg_seqs)
-    sampled_seqs_dict = {True: [], False: []}
+    sampled_seqs = []
+    sampled_labels = []
     for idx in range(max(num_pos, num_neg)):
         rand_idx = np.random.randint(num_pos)
         rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
         mutated_seq = pos_seqs[rand_idx].copy()
         mutated_seq[rand_resi_to_mutate] = lbl_map[np.random.randint(4)]
-        sampled_seqs_dict[True].append(mutated_seq)
+        sampled_seqs.append(mutated_seq)
+        sampled_seqs.append(True)
 
         rand_idx = np.random.randint(num_neg)
-        sampled_seqs_dict[False].append(neg_seqs[rand_idx])
+        sampled_seqs.append(neg_seqs[rand_idx])
+
+        sampled_labels.append(False)
+
+    sampled_array = np.column_stack((sampled_seqs, sampled_labels))
+
+    return sampled_array[:, 0].tolist(), sampled_array[:, 1].tolist()
 
 
 def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
