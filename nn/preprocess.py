@@ -20,7 +20,7 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         sampled_labels: List[bool]
             List of labels for the sampled sequences
     """
-    lbl_map = {'A': 0, 'T': 1, 'C': 2, 'G': 3}
+    lbl_map = {0: 'A', 1: 'T', 2: 'C', 3: 'G'}
     
     # assume number of sequences to inc
     pos_seqs = []
@@ -38,10 +38,10 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     for idx in range(max(num_pos, num_neg)):
         rand_idx = np.random.randint(num_pos)
         rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
-        mutated_seq = pos_seqs[rand_idx].copy()
-        mutated_seq[rand_resi_to_mutate] = lbl_map[np.random.randint(4)]
+        mutated_seq = pos_seqs[rand_idx]
+        mutated_seq = mutated_seq[:rand_resi_to_mutate] + lbl_map[np.random.randint(4)] + mutated_seq[rand_resi_to_mutate+1:]
         sampled_seqs.append(mutated_seq)
-        sampled_seqs.append(True)
+        sampled_labels.append(True)
 
         rand_idx = np.random.randint(num_neg)
         sampled_seqs.append(neg_seqs[rand_idx])
@@ -73,5 +73,12 @@ def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
             Then, AGA -> [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0].
     """
     lbl_map = {'A': 0, 'T': 1, 'C': 2, 'G': 3}
-    seq_idxs = list(map(lambda x: lbl_map[x], seq_arr))
-    return np.eye(len(lbl_map))[seq_idxs].flatten(order='C')
+    seq_idxs = list(map(lambda x: 
+                        list(map(lambda y: lbl_map[y], x)), 
+                        seq_arr))
+
+    encodings = []
+    for seq in seq_idxs:
+        encodings.append(np.eye(4)[seq].flatten(order='C'))
+
+    return encodings
