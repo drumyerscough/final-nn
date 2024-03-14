@@ -175,10 +175,10 @@ class NeuralNetwork:
             db_curr: ArrayLike
                 Partial derivative of loss function with respect to current layer bias matrix.
         """
-        backprops = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
-        backprop_for_this_loss = backprops[activation_curr]
+        f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
+        f_prime = f_primes[activation_curr]
 
-        dA_prev = (W_curr.T @ dA_curr) * backprop_for_this_loss(dA_curr, Z_curr)
+        dA_prev = (W_curr.T @ dA_curr) * f_prime(dA_curr, Z_curr)
         dW_curr = dA_curr @ activation_curr.T
         db_curr = dA_curr
 
@@ -204,9 +204,13 @@ class NeuralNetwork:
         grad_dict = {idx: {'dW': 0, 'db': 0} for idx in range(len(self.arch))}
 
         # set dA_prev for output layer based on ground truth labels
-        losses = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
-        loss = losses[self._loss_func]
-        dA_prev = -(y - y_hat) * loss(y, y_hat)
+        loss_backprops = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
+        loss_backprop = loss_backprops[self._loss_func]
+
+        f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
+        f_prime = f_primes[self.arch[-1]['activation']]
+
+        dA_prev = loss_backprop(y, y_hat) * f_prime(None, cache[len(self.arch)][0])
 #
         #for y_i, y_hat_i in zip(y, y_hat):
         for idx, layer in enumerate(self.arch):
