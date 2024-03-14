@@ -207,7 +207,7 @@ class NeuralNetwork:
         losses = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
         loss = losses[self._loss_func]
         dA_prev = -(y - y_hat) * loss(y, y_hat)
-
+#
         #for y_i, y_hat_i in zip(y, y_hat):
         for idx, layer in enumerate(self.arch):
             layer_idx = idx + 1
