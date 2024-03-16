@@ -450,4 +450,4 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        return -(y - y_hat / y.shape[0])
+        return -(y - y_hat) / y.shape[0]
