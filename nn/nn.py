@@ -179,14 +179,14 @@ class NeuralNetwork:
         f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
         f_prime = f_primes[activation_curr]
 
-        #print(W_curr.shape)
-        #print(dA_curr.shape)
-        #print(Z_curr.shape)
+        print(W_curr.shape)
+        print(dA_curr.shape)
+        print(Z_curr.shape)
 
         delta = f_prime(dA_curr, Z_curr)
 
-        #print(A_prev.shape)
-        #print(delta.shape)
+        print(A_prev.shape)
+        print(delta.shape)
 
         # Compute partial derivatives
         #dW_curr = A_prev.T @ delta
@@ -457,5 +457,5 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        return np.sum(y - y_hat) / len(y)
+        return y - y_hat / len(y)
         #return np.sum(y_hat*(y - y_hat)) / len(y)
