@@ -179,19 +179,22 @@ class NeuralNetwork:
         f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
         f_prime = f_primes[activation_curr]
 
-        print(W_curr.shape)
-        print(dA_curr.shape)
-        print(Z_curr.shape)
+        #print(W_curr.shape)
+        #print(dA_curr.shape)
+        #print(Z_curr.shape)
 
-        delta = f_prime(dA_curr, Z_curr) * dA_curr
+        delta = f_prime(dA_curr, Z_curr)
 
-        print(A_prev.shape)
-        print(delta.shape)
+        #print(A_prev.shape)
+        #print(delta.shape)
 
         # Compute partial derivatives
-        dW_curr = A_prev.T @ delta
-        db_curr = delta
-        dA_prev = delta @ W_curr
+        #dW_curr = A_prev.T @ delta
+        #db_curr = delta
+        #dA_prev = delta @ W_curr
+        dW_curr = delta@A_prev.T / A_prev.shape[1]
+        db_curr = np.sum(delta, axis=1, keepdims=True) / A_prev.shape[1]
+        dA_prev = W_curr.T @ delta
 
         return dA_prev, dW_curr, db_curr
 
@@ -219,23 +222,25 @@ class NeuralNetwork:
         loss_backprop = loss_backprops[self._loss_func]
 
         f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
-        f_prime = f_primes[self.arch[-1]['activation']]
+        f_prime = f_primes[self.arch[-1]['activation']] # takes inputs dA, Z
 
-        dA_prev = loss_backprop(y, y_hat) * f_prime(None, cache[len(self.arch)][0])
-
-        # wtf is previous? what indices should I be putting into cache?
+        #dA_curr = f_prime(loss_backprop(y, y_hat), cache[len(self.arch)][0])
+        dA_curr = loss_backprop(y, y_hat)
 
         for idx in range(1,1+len(self.arch)):
+            print('backpropping thru layer')
             layer = self.arch[-idx]
             layer_idx = len(self.arch) - idx + 1
-            dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx)],
-                                                         b_curr=self._param_dict['b' + str(layer_idx)], 
+            dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx-1)],
+                                                         b_curr=self._param_dict['b' + str(layer_idx-1)], 
                                                          Z_curr=cache[layer_idx][0],
                                                          A_prev=cache[layer_idx-1][1],
-                                                         dA_curr=dA_prev,
-                                                         activation_curr=layer['activation'])
+                                                         dA_curr=dA_curr,
+                                                         activation_curr=self.arch[layer_idx-1]['activation'])
             grad_dict[layer_idx]['dW'] += dW_curr
             grad_dict[layer_idx]['db'] += db_curr
+
+            dA_curr = dA_prev
 
         for layer_idx, layer in grad_dict.items():
             layer['dW'] = layer['dW'] / y.shape[0]
@@ -257,8 +262,8 @@ class NeuralNetwork:
         print('might be forgetting 1/m terms')
         alpha = self._lr
         for layer_idx, grad in grad_dict.items():
-            self._param_dict['W' + str(layer_idx)] = self._param_dict['W' + str(layer_idx)] - alpha*grad['dW'].T
-            self._param_dict['b' + str(layer_idx)] = self._param_dict['b' + str(layer_idx)] - alpha*grad['db'].T
+            self._param_dict['W' + str(layer_idx)] = self._param_dict['W' + str(layer_idx)] - alpha*grad['dW']
+            self._param_dict['b' + str(layer_idx)] = self._param_dict['b' + str(layer_idx)] - alpha*grad['db']
 
 
     def fit(
@@ -291,7 +296,7 @@ class NeuralNetwork:
         per_epoch_loss_train = []
         per_epoch_loss_val = []
 
-        losses = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
+        losses = {'bin_ce': self._binary_cross_entropy, 'mse': self._mean_squared_error}
         loss = losses[self._loss_func]
 
         num_batches = int(np.ceil(X_train.shape[0] / self._batch_size))
@@ -305,9 +310,9 @@ class NeuralNetwork:
                 X_batch = batch[:, :X_train.shape[1]]
                 y_batch = batch[:, X_train.shape[1]:]
                 output, cache = self.forward(X_batch)
-                grad_dict = self.backprop(y_batch, output, cache)
+                grad_dict = self.backprop(y_batch.T, output, cache)
 
-                per_epoch_loss_train.append(loss(output, y_batch))
+                per_epoch_loss_train.append(loss(output.T, y_batch))
                 #per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
             print(f'done')
 
@@ -388,7 +393,7 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
 
-        return np.greater(Z, 0)# * dA
+        return np.greater(Z, 0) * dA
 
     def _binary_cross_entropy(self, y: ArrayLike, y_hat: ArrayLike) -> float:
         """
