@@ -92,7 +92,7 @@ class NeuralNetwork:
 
         Args:
             W_curr: ArrayLike
-                Current layer weight matrix.
+                Current layer weight matrix with shape [output_dim, input_dim].
             b_curr: ArrayLike
                 Current layer bias matrix.
             A_prev: ArrayLike
@@ -108,11 +108,11 @@ class NeuralNetwork:
         """
         activations = {'relu': self._relu, 'sigmoid': self._sigmoid}
         f = activations[activation]
-        print(W_curr.shape)
-        print(A_prev.shape)
-        Z_curr = np.dot(W_curr, A_prev) + b_curr
 
-        return f(Z_curr), Z_curr
+        Z_curr = W_curr@A_prev.T + b_curr
+        Z_curr = Z_curr.T
+
+        return Z_curr, f(Z_curr)
 
     def forward(self, X: ArrayLike) -> Tuple[ArrayLike, Dict[str, ArrayLike]]:
         """
@@ -129,15 +129,18 @@ class NeuralNetwork:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
         # make cache with layer indices as keys and 2-tuples of (Z, A) as values
-        # entry for key=0 represents input data, so activations = X and Z is none
-        cache = {0: (None, X.T)}
+        # entry for key=0 represents input data, so Z is none and activations = X
+        cache = {0: (None, X)}
+        A_curr = X
 
         for idx, layer in enumerate(self.arch):
+            A_prev = A_curr
             layer_idx = idx + 1 # note that self._param_dict starts with index 1
-            cache[layer_idx] = self._single_forward(self._param_dict['W' + str(layer_idx)], 
-                                                    self._param_dict['b' + str(layer_idx)], 
-                                                    cache[idx][1],
-                                                    layer['activation'])
+            Z_curr, A_curr = self._single_forward(W_curr=self._param_dict['W' + str(layer_idx)], 
+                                                    b_curr=self._param_dict['b' + str(layer_idx)], 
+                                                    A_prev=A_prev,
+                                                    activation=layer['activation'])
+            cache[layer_idx] = Z_curr, A_curr
         
         output = cache[layer_idx][1]
         return output, cache
@@ -183,20 +186,17 @@ class NeuralNetwork:
         print(dA_curr.shape)
         print(Z_curr.shape)
 
-        delta = f_prime(dA_curr, Z_curr)
+        delta = f_prime(dA_curr, Z_curr).T
 
         print(A_prev.shape)
         print(delta.shape)
 
-        # Compute partial derivatives
-        #dW_curr = A_prev.T @ delta
-        #db_curr = delta
-        #dA_prev = delta @ W_curr
-        dW_curr = delta@A_prev.T / A_prev.shape[1]
-        db_curr = np.sum(delta, axis=1, keepdims=True) / A_prev.shape[1]
+        m = A_prev.shape[1]
+        dW_curr = delta@A_prev / m
+        db_curr = np.sum(delta, axis=1, keepdims=True) / m
         dA_prev = W_curr.T @ delta
 
-        return dA_prev, dW_curr, db_curr
+        return dA_prev.T, dW_curr, db_curr
 
     def backprop(self, y: ArrayLike, y_hat: ArrayLike, cache: Dict[str, ArrayLike]):
         """
@@ -217,6 +217,9 @@ class NeuralNetwork:
         """
         grad_dict = {idx+1: {'dW': 0, 'db': 0} for idx in range(len(self.arch))}
 
+        print(list(cache.keys()))
+        print(list(self._param_dict.keys()))
+
         # set dA_prev for output layer based on ground truth labels
         loss_backprops = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
         loss_backprop = loss_backprops[self._loss_func]
@@ -224,28 +227,22 @@ class NeuralNetwork:
         f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
         f_prime = f_primes[self.arch[-1]['activation']] # takes inputs dA, Z
 
-        #dA_curr = f_prime(loss_backprop(y, y_hat), cache[len(self.arch)][0])
         dA_curr = loss_backprop(y, y_hat)
 
-        for idx in range(1,1+len(self.arch)):
+        #for idx in range(1,1+len(self.arch)):
+        for layer_idx, layer in reversed(list(enumerate(self.arch, start=1))):
             print('backpropping thru layer')
-            layer = self.arch[-idx]
-            layer_idx = len(self.arch) - idx + 1
-            dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx-1)],
-                                                         b_curr=self._param_dict['b' + str(layer_idx-1)], 
+            
+            dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx)],
+                                                         b_curr=self._param_dict['b' + str(layer_idx)], 
                                                          Z_curr=cache[layer_idx][0],
                                                          A_prev=cache[layer_idx-1][1],
                                                          dA_curr=dA_curr,
                                                          activation_curr=self.arch[layer_idx-1]['activation'])
-            grad_dict[layer_idx]['dW'] += dW_curr
-            grad_dict[layer_idx]['db'] += db_curr
-
+            grad_dict[layer_idx]['dW'] = dW_curr
+            grad_dict[layer_idx]['db'] = db_curr
             dA_curr = dA_prev
 
-        for layer_idx, layer in grad_dict.items():
-            layer['dW'] = layer['dW'] / y.shape[0]
-            layer['db'] = layer['db'] / y.shape[0]
-        
         self._update_params(grad_dict)
 
         return grad_dict
@@ -310,10 +307,10 @@ class NeuralNetwork:
                 X_batch = batch[:, :X_train.shape[1]]
                 y_batch = batch[:, X_train.shape[1]:]
                 output, cache = self.forward(X_batch)
-                grad_dict = self.backprop(y_batch.T, output, cache)
+                grad_dict = self.backprop(y_batch, output, cache)
 
-                per_epoch_loss_train.append(loss(output.T, y_batch))
-                #per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
+                per_epoch_loss_train.append(loss(output, y_batch))
+                per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
             print(f'done')
 
         return per_epoch_loss_train, per_epoch_loss_val
@@ -457,5 +454,4 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        return y - y_hat / len(y)
-        #return np.sum(y_hat*(y - y_hat)) / len(y)
+        return (y - y_hat / len(y))
