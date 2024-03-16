@@ -217,15 +217,12 @@ class NeuralNetwork:
         """
         grad_dict = {idx+1: {'dW': 0, 'db': 0} for idx in range(len(self.arch))}
 
-        print(list(cache.keys()))
-        print(list(self._param_dict.keys()))
+        #print(list(cache.keys()))
+        #print(list(self._param_dict.keys()))
 
         # set dA_prev for output layer based on ground truth labels
         loss_backprops = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
         loss_backprop = loss_backprops[self._loss_func]
-
-        f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
-        f_prime = f_primes[self.arch[-1]['activation']] # takes inputs dA, Z
 
         dA_curr = loss_backprop(y, y_hat)
 
@@ -342,7 +339,7 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        return 1/(1 + np.exp(Z))
+        return 1/(1 + np.exp(-Z))
 
     def _sigmoid_backprop(self, dA: ArrayLike, Z: ArrayLike):
         """
@@ -359,7 +356,7 @@ class NeuralNetwork:
                 Partial derivative of current layer Z matrix.
         """
         f_Z = self._sigmoid(Z)
-        return f_Z * (1 - f_Z)
+        return dA * f_Z * (1 - f_Z)
 
     def _relu(self, Z: ArrayLike) -> ArrayLike:
         """
@@ -389,7 +386,6 @@ class NeuralNetwork:
             dZ: ArrayLike
                 Partial derivative of current layer Z matrix.
         """
-
         return np.greater(Z, 0) * dA
 
     def _binary_cross_entropy(self, y: ArrayLike, y_hat: ArrayLike) -> float:
@@ -454,4 +450,4 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        return (y - y_hat / len(y))
+        return -(y - y_hat / y.shape[0])
