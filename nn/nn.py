@@ -108,9 +108,9 @@ class NeuralNetwork:
         """
         activations = {'relu': self._relu, 'sigmoid': self._sigmoid}
         f = activations[activation]
-#        Z_curr = np.sum(W_curr@A_prev.T + b_curr, axis=0, keepdims=True).T
-        Z_curr = W_curr@A_prev.T + b_curr
-        Z_curr = Z_curr.T
+        print(W_curr.shape)
+        print(A_prev.shape)
+        Z_curr = np.dot(W_curr, A_prev) + b_curr
 
         return f(Z_curr), Z_curr
 
@@ -128,18 +128,19 @@ class NeuralNetwork:
             cache: Dict[str, ArrayLike]:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
-        cache = {0: (X, None)}
+        # make cache with layer indices as keys and 2-tuples of (Z, A) as values
+        # entry for key=0 represents input data, so activations = X and Z is none
+        cache = {0: (None, X.T)}
 
         for idx, layer in enumerate(self.arch):
-            layer_idx = idx + 1
+            layer_idx = idx + 1 # note that self._param_dict starts with index 1
             cache[layer_idx] = self._single_forward(self._param_dict['W' + str(layer_idx)], 
                                                     self._param_dict['b' + str(layer_idx)], 
-                                                    cache[idx][0], 
+                                                    cache[idx][1],
                                                     layer['activation'])
-
-        return cache[layer_idx][0], cache
-        #output = [cache[layer_idx][0] for layer_idx in cache]
-        #return output, cache
+        
+        output = cache[layer_idx][1]
+        return output, cache
 
     def _single_backprop(
         self,
@@ -230,15 +231,15 @@ class NeuralNetwork:
             dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx)],
                                                          b_curr=self._param_dict['b' + str(layer_idx)], 
                                                          Z_curr=cache[layer_idx][0],
-                                                         A_prev=cache[layer_idx-1][0],
+                                                         A_prev=cache[layer_idx-1][1],
                                                          dA_curr=dA_prev,
                                                          activation_curr=layer['activation'])
             grad_dict[layer_idx]['dW'] += dW_curr
             grad_dict[layer_idx]['db'] += db_curr
 
         for layer_idx, layer in grad_dict.items():
-            layer['dW'] = layer['dW'] / len(y)
-            layer['db'] = layer['db'] / len(y)
+            layer['dW'] = layer['dW'] / y.shape[0]
+            layer['db'] = layer['db'] / y.shape[0]
         
         self._update_params(grad_dict)
 
@@ -293,13 +294,21 @@ class NeuralNetwork:
         losses = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
         loss = losses[self._loss_func]
 
+        num_batches = int(np.ceil(X_train.shape[0] / self._batch_size))
         for epoch in range(self._epochs):
             print(f'starting epoch #{epoch}')
-            output, cache = self.forward(X_train)
-            grad_dict = self.backprop(y_train, output, cache)
 
-            per_epoch_loss_train.append(loss(output, y_train))
-            #per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
+            batches = np.concatenate((X_train, y_train), axis=1)
+            np.random.shuffle(batches)
+            for batch in np.array_split(batches, num_batches):
+                # note that X should be a matrix with shape [batch_size, features]
+                X_batch = batch[:, :X_train.shape[1]]
+                y_batch = batch[:, X_train.shape[1]:]
+                output, cache = self.forward(X_batch)
+                grad_dict = self.backprop(y_batch, output, cache)
+
+                per_epoch_loss_train.append(loss(output, y_batch))
+                #per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
             print(f'done')
 
         return per_epoch_loss_train, per_epoch_loss_val
