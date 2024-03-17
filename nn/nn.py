@@ -182,14 +182,7 @@ class NeuralNetwork:
         f_primes = {'relu': self._relu_backprop, 'sigmoid': self._sigmoid_backprop}
         f_prime = f_primes[activation_curr]
 
-        print(W_curr.shape)
-        print(dA_curr.shape)
-        print(Z_curr.shape)
-
         delta = f_prime(dA_curr, Z_curr).T
-
-        print(A_prev.shape)
-        print(delta.shape)
 
         m = A_prev.shape[1]
         dW_curr = delta@A_prev / m
@@ -217,9 +210,6 @@ class NeuralNetwork:
         """
         grad_dict = {idx+1: {'dW': 0, 'db': 0} for idx in range(len(self.arch))}
 
-        #print(list(cache.keys()))
-        #print(list(self._param_dict.keys()))
-
         # set dA_prev for output layer based on ground truth labels
         loss_backprops = {'bin_ce': self._binary_cross_entropy_backprop, 'mse': self._mean_squared_error_backprop}
         loss_backprop = loss_backprops[self._loss_func]
@@ -228,7 +218,6 @@ class NeuralNetwork:
 
         #for idx in range(1,1+len(self.arch)):
         for layer_idx, layer in reversed(list(enumerate(self.arch, start=1))):
-            print('backpropping thru layer')
             
             dA_prev, dW_curr, db_curr = self._single_backprop(W_curr=self._param_dict['W' + str(layer_idx)],
                                                          b_curr=self._param_dict['b' + str(layer_idx)], 
@@ -294,21 +283,23 @@ class NeuralNetwork:
         loss = losses[self._loss_func]
 
         num_batches = int(np.ceil(X_train.shape[0] / self._batch_size))
-        for epoch in range(self._epochs):
-            print(f'starting epoch #{epoch}')
+        for _ in range(self._epochs):
 
             batches = np.concatenate((X_train, y_train), axis=1)
             np.random.shuffle(batches)
             for batch in np.array_split(batches, num_batches):
+
+                per_batch_loss_train = []
+
                 # note that X should be a matrix with shape [batch_size, features]
                 X_batch = batch[:, :X_train.shape[1]]
                 y_batch = batch[:, X_train.shape[1]:]
                 output, cache = self.forward(X_batch)
-                grad_dict = self.backprop(y_batch, output, cache)
+                _ = self.backprop(y_batch, output, cache)
+                per_batch_loss_train.append(loss(output, y_batch))
 
-                per_epoch_loss_train.append(loss(output, y_batch))
-                per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
-            print(f'done')
+            per_epoch_loss_train.append(np.mean(per_batch_loss_train))
+            per_epoch_loss_val.append(loss(self.predict(X_val), y_val))
 
         return per_epoch_loss_train, per_epoch_loss_val
 
