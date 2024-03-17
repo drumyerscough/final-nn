@@ -184,9 +184,8 @@ class NeuralNetwork:
 
         delta = f_prime(dA_curr, Z_curr).T
 
-        m = A_prev.shape[1]
-        dW_curr = delta@A_prev / m
-        db_curr = np.sum(delta, axis=1, keepdims=True) / m
+        dW_curr = delta@A_prev
+        db_curr = np.sum(delta, axis=1, keepdims=True)
         dA_prev = W_curr.T @ delta
 
         return dA_prev.T, dW_curr, db_curr
@@ -225,8 +224,8 @@ class NeuralNetwork:
                                                          A_prev=cache[layer_idx-1][1],
                                                          dA_curr=dA_curr,
                                                          activation_curr=self.arch[layer_idx-1]['activation'])
-            grad_dict[layer_idx]['dW'] = dW_curr
-            grad_dict[layer_idx]['db'] = db_curr
+            grad_dict[layer_idx]['dW'] = dW_curr / y.shape[0]
+            grad_dict[layer_idx]['db'] = db_curr / y.shape[0]
             dA_curr = dA_prev
 
         self._update_params(grad_dict)
@@ -242,7 +241,6 @@ class NeuralNetwork:
             grad_dict: Dict[str, ArrayLike]
                 Dictionary containing the gradient information from most recent round of backprop.
         """
-        print('might be forgetting 1/m terms')
         alpha = self._lr
         for layer_idx, grad in grad_dict.items():
             self._param_dict['W' + str(layer_idx)] = self._param_dict['W' + str(layer_idx)] - alpha*grad['dW']

@@ -57,8 +57,7 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         sampled_seqs.append(padded_seq)
         sampled_labels.append(True)
 
-        rand_idx = np.random.randint(num_neg)
-        sampled_seqs.append(neg_seqs[rand_idx])
+        sampled_seqs.append(neg_seqs.pop())
 
         sampled_labels.append(False)
 
