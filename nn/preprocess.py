@@ -21,8 +21,9 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
             List of labels for the sampled sequences
     """
     lbl_map = {0: 'A', 1: 'T', 2: 'C', 3: 'G'}
+    mapper = np.vectorize(pyfunc=lambda x: lbl_map[x])
     
-    # assume number of sequences to inc
+    # divide inputs into positive and negative examples
     pos_seqs = []
     neg_seqs = []
     for label, seq in zip(labels, seqs):
@@ -30,17 +31,30 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
             pos_seqs.append(seq)
         elif not label:
             neg_seqs.append(seq)
+
+    # find max sequence length
+    max_seq_len = np.max([len(seq) for seq in seqs])
+
+    # drop negative sequences with length less than max_seq_len
+    # this loses some training data, but only 5 sequences
+    neg_seqs = [seq for seq in neg_seqs if len(seq) == max_seq_len]
     
+    # upsample the smaller class to the size of the larger class
     num_pos = len(pos_seqs)
     num_neg = len(neg_seqs)
     sampled_seqs = []
     sampled_labels = []
     for idx in range(max(num_pos, num_neg)):
         rand_idx = np.random.randint(num_pos)
-        rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
         mutated_seq = pos_seqs[rand_idx]
-        mutated_seq = mutated_seq[:rand_resi_to_mutate] + lbl_map[np.random.randint(4)] + mutated_seq[rand_resi_to_mutate+1:]
-        sampled_seqs.append(mutated_seq)
+        #rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
+        #mutated_seq = mutated_seq[:rand_resi_to_mutate] + lbl_map[np.random.randint(4)] + mutated_seq[rand_resi_to_mutate+1:]
+
+        rand_idx = np.random.randint(max_seq_len - num_pos)
+        padded_seq = ''.join(mapper(np.random.randint(0, high=4, size=max_seq_len)).tolist())
+        padded_seq = padded_seq[:rand_idx] + mutated_seq + padded_seq[rand_idx+len(mutated_seq):]
+
+        sampled_seqs.append(padded_seq)
         sampled_labels.append(True)
 
         rand_idx = np.random.randint(num_neg)
