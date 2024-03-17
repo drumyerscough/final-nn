@@ -62,6 +62,7 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         sampled_labels.append(False)
 
     sampled_array = np.column_stack((sampled_seqs, sampled_labels))
+    # could shuffle here, but I won't since I'll use sklearn for train/test splitting, which shuffles
 
     return sampled_array[:, 0].tolist(), sampled_array[:, 1].tolist()
 
