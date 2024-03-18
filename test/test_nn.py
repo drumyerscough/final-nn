@@ -1,20 +1,46 @@
 import numpy as np
 from nn import nn, preprocess
 
-GENERIC_ARCH = [{'input_dim': 4000, 'output_dim': 250, 'activation': 'relu'}, 
-                {'input_dim': 250, 'output_dim': 2, 'activation': 'sigmoid'}]
+GENERIC_ARCH = [{'input_dim': 2, 'output_dim': 2, 'activation': 'relu'}, 
+                {'input_dim': 2, 'output_dim': 1, 'activation': 'sigmoid'}]
+TEST_NN = nn.NeuralNetwork(nn_arch=GENERIC_ARCH, lr=1, seed=42, batch_size=1, epochs=3, loss_function='mse')
+X = np.array([])
+Y = np.array([])
 
 def test_single_forward():
-    pass
+    """
+    Tests that the _single_forward() method returns correct values.
+    """
+    Z_curr, A_curr = TEST_NN._single_forward(W_curr: ArrayLike,
+                                             b_curr: ArrayLike,
+                                             A_prev: ArrayLike,
+                                             activation: str)
 
 def test_forward():
-    pass
+    """
+    Tests that the forward() method returns correct values.
+    """
+    output, cache = TEST_NN.forward(X)
+    assert output ==
+    assert cache ==
 
 def test_single_backprop():
-    pass
+    """
+    Tests that the _single_backprop() method returns correct values.
+    """
+    dA_prev, dW_curr, db_curr = TEST_NN._single_backprop(
+        W_curr: ArrayLike,
+        b_curr: ArrayLike,
+        Z_curr: ArrayLike,
+        A_prev: ArrayLike,
+        dA_curr: ArrayLike,
+        activation_curr: str)
 
 def test_predict():
-    pass
+    """
+    Tests that the predict() method returns correct values.
+    """
+    assert TEST_NN.predict(X) == 
 
 def test_binary_cross_entropy():
     """
