@@ -45,11 +45,15 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     sampled_seqs = []
     sampled_labels = []
     for idx in range(max(num_pos, num_neg)):
+        # pick a random Rap1 binding seq from the positives
         rand_idx = np.random.randint(num_pos)
         mutated_seq = pos_seqs[rand_idx]
+
+        # originally I considered making mutations to the Rap1 motifs, but I decided it wasn't necessary
         #rand_resi_to_mutate = np.random.randint(len(pos_seqs[rand_idx]))
         #mutated_seq = mutated_seq[:rand_resi_to_mutate] + lbl_map[np.random.randint(4)] + mutated_seq[rand_resi_to_mutate+1:]
 
+        # generate a random DNA sequence of length max_seq_len and insert the Rap1 motif at a random position
         rand_idx = np.random.randint(max_seq_len - num_pos)
         padded_seq = ''.join(mapper(np.random.randint(0, high=4, size=max_seq_len)).tolist())
         padded_seq = padded_seq[:rand_idx] + mutated_seq + padded_seq[rand_idx+len(mutated_seq):]
@@ -57,8 +61,8 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         sampled_seqs.append(padded_seq)
         sampled_labels.append(True)
 
+        # add a negative sequence (no resampling)
         sampled_seqs.append(neg_seqs.pop())
-
         sampled_labels.append(False)
 
     sampled_array = np.column_stack((sampled_seqs, sampled_labels))
