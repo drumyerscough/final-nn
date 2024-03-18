@@ -30,7 +30,7 @@ def test_forward():
                       2: (np.array([[-0.02039718],[0.00170177]]), np.array([[0.49490088],[0.50042544]]))}
     
     # check that output is correct
-    assert np.allclose(output, np.array([[0.4949], [0.5004]]))
+    assert np.allclose(output, np.array([[0.49490088],[0.50042544]]))
 
     # check that cache is correct
     for key, (Z, A) in cache.items():
@@ -55,7 +55,7 @@ def test_predict():
     """
     Tests that the predict() method returns correct values.
     """
-    assert np.allclose(TEST_NN.predict(X), np.array([[0.4949], [0.5004]]))
+    assert np.allclose(TEST_NN.predict(X), np.array([[0.49490088],[0.50042544]]))
 
 def test_binary_cross_entropy():
     """
