@@ -49,7 +49,7 @@ def test_single_backprop():
                                                          activation_curr='relu')
     assert np.allclose(dA_prev, np.array([[1, 0]]))
     assert np.allclose(dW_curr, np.array([[1]]))
-    assert np.allclose(db_curr, np.array([[1]])))
+    assert np.allclose(db_curr, np.array([[1]]))
 
 def test_predict():
     """
