@@ -33,7 +33,7 @@ def test_forward():
     assert np.allclose(output, np.array([[0.4949], [0.5004]]))
 
     # check that cache is correct
-    for key, (Z, A) in cache.items()
+    for key, (Z, A) in cache.items():
         assert np.allclose(Z, expected_cache[key][0])
         assert np.allclose(A, expected_cache[key][1])
 
