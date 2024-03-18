@@ -4,43 +4,58 @@ from nn import nn, preprocess
 GENERIC_ARCH = [{'input_dim': 2, 'output_dim': 2, 'activation': 'relu'}, 
                 {'input_dim': 2, 'output_dim': 1, 'activation': 'sigmoid'}]
 TEST_NN = nn.NeuralNetwork(nn_arch=GENERIC_ARCH, lr=1, seed=42, batch_size=1, epochs=3, loss_function='mse')
-X = np.array([])
-Y = np.array([])
+X = np.array([[1,2], [2,3]])
+Y = np.array([0.5, 0.8])
 
 def test_single_forward():
     """
     Tests that the _single_forward() method returns correct values.
     """
-    Z_curr, A_curr = TEST_NN._single_forward(W_curr: ArrayLike,
-                                             b_curr: ArrayLike,
-                                             A_prev: ArrayLike,
-                                             activation: str)
+    Z_curr, A_curr = TEST_NN._single_forward(W_curr=np.array([[1, 0], [1, 0.5]]),
+                                             b_curr=np.array([[0.1, 0.2], [1, 0.3]]),
+                                             A_prev=np.array([[0.1, 0.2], [1, 0.3]]),
+                                             activation='relu')
+
+    assert np.allclose(Z_curr, np.array([[0.2 , 1.2], [1.2 , 1.45]]))
+    assert np.allclose(A_curr, np.array([[0.2 , 1.2], [1.2 , 1.45]]))
 
 def test_forward():
     """
     Tests that the forward() method returns correct values.
     """
     output, cache = TEST_NN.forward(X)
-    assert output ==
-    assert cache ==
+
+    expected_cache = {0: (None, np.array([[1, 2],[2, 3]])),
+                      1: (np.array([[-0.00139678, 0.34596113],[0.0344482, 0.56303297]]), np.array([[0, 0.34596113],[0.0344482, 0.56303297]])),
+                      2: (np.array([[-0.02039718],[0.00170177]]), np.array([[0.49490088],[0.50042544]]))}
+    
+    # check that output is correct
+    assert np.allclose(output, np.array([[0.4949], [0.5004]]))
+
+    # check that cache is correct
+    for key, (Z, A) in cache.items()
+        assert np.allclose(Z, expected_cache[key][0])
+        assert np.allclose(A, expected_cache[key][1])
 
 def test_single_backprop():
     """
     Tests that the _single_backprop() method returns correct values.
     """
-    dA_prev, dW_curr, db_curr = TEST_NN._single_backprop(
-        W_curr: ArrayLike,
-        b_curr: ArrayLike,
-        Z_curr: ArrayLike,
-        A_prev: ArrayLike,
-        dA_curr: ArrayLike,
-        activation_curr: str)
+    dA_prev, dW_curr, db_curr = TEST_NN._single_backprop(W_curr=np.array([[1, 0]]),
+                                                         b_curr=np.array([[0.1, 0.2]]),
+                                                         Z_curr=np.array([[2]]),
+                                                         A_prev=np.array([[1]]),
+                                                         dA_curr=np.array([[1]]),
+                                                         activation_curr='relu')
+    assert np.allclose(dA_prev, np.array([[1, 0]]))
+    assert np.allclose(dW_curr, np.array([[1]]))
+    assert np.allclose(db_curr, np.array([[1]])))
 
 def test_predict():
     """
     Tests that the predict() method returns correct values.
     """
-    assert TEST_NN.predict(X) == 
+    assert np.allclose(TEST_NN.predict(X), np.array([[0.4949], [0.5004]]))
 
 def test_binary_cross_entropy():
     """
