@@ -81,5 +81,5 @@ def test_one_hot_encode_seqs():
     Tests that the one_hot_encode_seqs() function correctly encodes DNA sequences into 1-hot vectors.
     """
     seqs = ['AT', 'GC']
-    seqs_1hot = [np.array([1, 0, 0, 0, 0, 1, 0, 0]), np.array([0, 0, 1, 0, 0, 0, 0, 1])]
-    assert preprocess.one_hot_encode_seqs(seqs).all() == seqs_1hot.all()
+    seqs_1hot = [np.array([1, 0, 0, 0, 0, 1, 0, 0]), np.array([0, 0, 0, 1, 0, 0, 1, 0])]
+    assert np.array(preprocess.one_hot_encode_seqs(seqs)).all() == np.array(seqs_1hot).all()

@@ -1,3 +1,4 @@
+[![Project Tests](https://github.com/drumyerscough/final-nn/actions/workflows/ci.yml/badge.svg)](https://github.com/drumyerscough/final-nn/actions/workflows/ci.yml)
 # Final project: neural network
 
 ## Overview
