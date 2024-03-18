@@ -1,5 +1,5 @@
 import numpy as np
-from nn import nn, io, preprocess
+from nn import nn, preprocess
 
 GENERIC_ARCH = [{'input_dim': 4000, 'output_dim': 250, 'activation': 'relu'}, 
                 {'input_dim': 250, 'output_dim': 2, 'activation': 'sigmoid'}]
@@ -22,7 +22,7 @@ def test_binary_cross_entropy():
     """
     my_nn = nn.NeuralNetwork(nn_arch=GENERIC_ARCH, seed=42, lr=1, batch_size=500, epochs=1000, loss_function='bin_ce')
     y = np.random.randint(0, high=2, size=5)
-    y_hat = np.random.rand(0, high=1, size=5)
+    y_hat = np.random.random(size=5)
     assert my_nn._binary_cross_entropy(y, y_hat) == -np.sum(y*np.log(y_hat) + (1-y)*np.log(1-y_hat)) / y.shape[0]
 
 def test_binary_cross_entropy_backprop():
@@ -32,7 +32,7 @@ def test_binary_cross_entropy_backprop():
     my_nn = nn.NeuralNetwork(nn_arch=GENERIC_ARCH, seed=42, lr=1, batch_size=500, epochs=1000, loss_function='bin_ce')
     y = np.random.randint(0, high=2, size=5)
     y_hat = np.random.random(size=5)
-    assert my_nn._binary_cross_entropy_backprop() == -(y - y_hat) / ((1-y_hat) * y_hat * y.shape[0] + 1e-10)
+    assert np.isclose(my_nn._binary_cross_entropy_backprop(y, y_hat), -(y - y_hat) / ((1-y_hat) * y_hat * y.shape[0] + 1e-10))
 
 def test_mean_squared_error():
     """
@@ -50,7 +50,7 @@ def test_mean_squared_error_backprop():
     my_nn = nn.NeuralNetwork(nn_arch=GENERIC_ARCH, seed=42, lr=1, batch_size=500, epochs=1000, loss_function='mse')
     y = np.random.randint(0, high=2, size=5)
     y_hat = np.random.random(size=5)
-    assert my_nn._mean_squared_error_backprop(y, y_hat) == -(y - y_hat) / y.shape[0]
+    assert np.isclose(my_nn._mean_squared_error_backprop(y, y_hat), -(y - y_hat) / y.shape[0])
 
 def test_sample_seqs():
     """
